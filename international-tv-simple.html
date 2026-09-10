@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>International Dashboard - TV</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+    iframe {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <iframe id="pbiFrame" title="International Dashboard" allowfullscreen="true"></iframe>
+
+<script>
+  var baseUrl =
+    "https://app.powerbi.com/view?r=eyJrIjoiYWM2YTcwNzMtZGE0Mi00Y2EzLThiNjctMjMzYTczM2RmNWRmIiwidCI6IjNiYWI4YzcwLWQyOTktNDdjMy1iZWQ5LWNjNWMzMTBlYWUxNSIsImMiOjh9";
+
+  // 15 seconds per page
+  var rotateEveryMs = 15000;
+
+  var pages = [
+    { name: "Page 1",  pageName: "1d8b8a7ba08b9bade097" },
+    { name: "Page 2",  pageName: "266e20d502510de09ba2" },
+    { name: "Page 3",  pageName: "90fb418330bd5633eccd" },
+    { name: "Page 4",  pageName: "e41b3d0b5250a6174e2a" },
+    { name: "Page 5",  pageName: "ff7ac899e4ab084007aa" },
+    { name: "Page 6",  pageName: "879f5f8e2e1273a60560" },
+    { name: "Page 7",  pageName: "93235fda0ad08dd18a67" },
+    { name: "Page 8",  pageName: "298cb8a65aecc40e6607" },
+    { name: "Page 9",  pageName: "bf3446ed28a52db06376" },
+    { name: "Page 10", pageName: "ba36259d3d9d09d340bb" },
+    { name: "Page 11", pageName: "70b03d075fcd4783342c" },
+    { name: "Page 12", pageName: "200db640638d470e0539" },
+    { name: "Page 13", pageName: "4f8b2a096ee23c5bb032" },
+    { name: "Page 14", pageName: "8dbda9a60c48397beab0" },
+    { name: "Page 15", pageName: "2e16d176954087de0196" }
+  ];
+
+  var frame = document.getElementById("pbiFrame");
+  var i = 0;
+
+  function setPage(index) {
+    frame.src = baseUrl + "&pageName=" + encodeURIComponent(pages[index].pageName);
+  }
+
+  setPage(0);
+
+  setInterval(function () {
+    i = (i + 1) % pages.length;
+    setPage(i);
+  }, rotateEveryMs);
+</script>
+</body>
+</html>
