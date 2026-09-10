@@ -5,27 +5,69 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>International Dashboard - TV</title>
   <style>
-    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-    iframe {
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #0b0b0b;
+      overflow: hidden;
+    }
+    /* Stage holds both iframes stacked on top of each other, filling the screen */
+    #stage {
       position: fixed;
       inset: 0;
       width: 100vw;
       height: 100vh;
-      border: 0;
     }
+    #stage iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      opacity: 0;
+      transition: opacity 800ms ease-in-out;
+    }
+    #stage iframe.active {
+      opacity: 1;
+    }
+    /* One-time click prompt to enter fullscreen (browser requires a user gesture) */
+    #fsPrompt {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(5, 13, 28, 0.92);
+      color: #d9d9d9;
+      font-family: Arial, sans-serif;
+      font-size: 28px;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      z-index: 10;
+    }
+    #fsPrompt.hidden { display: none; }
   </style>
 </head>
 <body>
-  <iframe id="pbiFrame" title="International Dashboard" allowfullscreen="true"></iframe>
+  <div id="stage">
+    <iframe id="frameA" title="International Dashboard" allowfullscreen="true"></iframe>
+    <iframe id="frameB" title="International Dashboard" allowfullscreen="true"></iframe>
+  </div>
+
+  <div id="fsPrompt">Click anywhere to start the dashboard</div>
 
 <script>
-  var baseUrl =
+  // Base "Publish to web" URL (your r=... token stays the same)
+  const baseUrl =
     "https://app.powerbi.com/view?r=eyJrIjoiYWM2YTcwNzMtZGE0Mi00Y2EzLThiNjctMjMzYTczM2RmNWRmIiwidCI6IjNiYWI4YzcwLWQyOTktNDdjMy1iZWQ5LWNjNWMzMTBlYWUxNSIsImMiOjh9";
 
-  // 15 seconds per page
-  var rotateEveryMs = 15000;
+  // How long each page stays on screen (15 seconds).
+  const rotateEveryMs = 15000;
+  // How early to start loading the NEXT page behind the current one (must be < rotateEveryMs).
+  // Gives Power BI time to render before the fade, so the swap is seamless.
+  const preloadLeadMs = 4000;
 
-  var pages = [
+  // Your pages (name + pageName) — rename each "name" to match your actual page titles
+  const pages = [
     { name: "Page 1",  pageName: "1d8b8a7ba08b9bade097" },
     { name: "Page 2",  pageName: "266e20d502510de09ba2" },
     { name: "Page 3",  pageName: "90fb418330bd5633eccd" },
@@ -43,19 +85,52 @@
     { name: "Page 15", pageName: "2e16d176954087de0196" }
   ];
 
-  var frame = document.getElementById("pbiFrame");
-  var i = 0;
+  const frames = [document.getElementById("frameA"), document.getElementById("frameB")];
+  const prompt = document.getElementById("fsPrompt");
 
-  function setPage(index) {
-    frame.src = baseUrl + "&pageName=" + encodeURIComponent(pages[index].pageName);
+  function urlFor(index) {
+    return `${baseUrl}&pageName=${encodeURIComponent(pages[index].pageName)}`;
   }
 
-  setPage(0);
+  let current = 0;     // index into pages[]
+  let visible = 0;     // which frame (0 or 1) is currently showing
 
-  setInterval(function () {
-    i = (i + 1) % pages.length;
-    setPage(i);
-  }, rotateEveryMs);
+  function startShow() {
+    // Load first page into frame A and show it.
+    frames[0].src = urlFor(0);
+    frames[0].classList.add("active");
+    scheduleNext();
+  }
+
+  function scheduleNext() {
+    const nextIndex = (current + 1) % pages.length;
+    const hiddenFrame = 1 - visible;
+
+    // Start loading the next page (hidden) a few seconds before the swap.
+    setTimeout(() => {
+      frames[hiddenFrame].src = urlFor(nextIndex);
+    }, rotateEveryMs - preloadLeadMs);
+
+    // At the swap point, fade to the freshly-loaded hidden frame.
+    setTimeout(() => {
+      frames[hiddenFrame].classList.add("active");
+      frames[visible].classList.remove("active");
+      visible = hiddenFrame;
+      current = nextIndex;
+      scheduleNext();
+    }, rotateEveryMs);
+  }
+
+  // Fullscreen on first click (required user gesture), then start.
+  function goFullscreenAndStart() {
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    if (req) { try { req.call(el); } catch (e) { /* ignore if blocked */ } }
+    prompt.classList.add("hidden");
+    startShow();
+  }
+
+  prompt.addEventListener("click", goFullscreenAndStart);
 </script>
 </body>
 </html>
